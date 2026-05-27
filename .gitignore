@@ -1,0 +1,68 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Data
+*.csv
+*.tsv
+*.dat
+data/*
+!data/.gitkeep
+
+# Models
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.pt
+*.pth
+models/*
+!models/.gitkeep
+
+# Node / Frontend
+node_modules/
+npm-debug.log
+yarn-error.log
+.pnp
+.pnp.js
+frontend/dist/
+frontend/build/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
