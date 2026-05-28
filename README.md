@@ -12,7 +12,7 @@ Built with a FastAPI backend serving an XGBoost model, and a React frontend for 
 ## 🚀 Project Status
 
 - [x] **Phase 1 — Data collection & feature engineering** (pandas, Elo ratings, lag features, no leakage)
-- [ ] **Phase 2 — XGBoost model** (multi-class, TimeSeriesSplit, calibrated probabilities)
+- [x] **Phase 2 — XGBoost model** (multi-class, TimeSeriesSplit, calibrated probabilities)
 - [ ] **Phase 3 — FastAPI backend** (POST /predict, POST /simulate, CORS, Dockerfile)
 - [ ] **Phase 4 — React UI** (bracket view, match predictor, simulation runner, team comparison)
 
