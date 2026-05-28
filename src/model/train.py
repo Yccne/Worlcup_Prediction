@@ -41,25 +41,31 @@ def train_model(X_train, y_train):
     )
     
     # 2. Hyperparameter Grid
-    # The computer will test random combinations of these settings to find the absolute best fit.
+    # To get the ABSOLUTE best performance, we add regularization (L1/L2) and gamma.
+    # This prevents the AI from memorizing noise and forces it to learn real football trends.
     param_distributions = {
         'max_depth': [2, 3, 4, 5, 6],           # How deep the trees can grow
-        'learning_rate': [0.01, 0.05, 0.1, 0.2],# How fast the model learns
-        'n_estimators': [100, 200, 300, 500],   # Number of trees to build
-        'subsample': [0.6, 0.8, 1.0],           # Fraction of data used to train each tree
-        'colsample_bytree': [0.6, 0.8, 1.0],    # Fraction of features used for each tree
-        'min_child_weight': [1, 3, 5]           # Minimum instances needed to split a node
+        'learning_rate': [0.01, 0.03, 0.05, 0.1, 0.2], # How fast the model learns
+        'n_estimators': [100, 200, 300, 500, 700],   # Number of trees to build
+        'subsample': [0.6, 0.7, 0.8, 0.9, 1.0],      # Fraction of data used to train each tree
+        'colsample_bytree': [0.6, 0.7, 0.8, 0.9, 1.0],# Fraction of features used for each tree
+        'min_child_weight': [1, 3, 5, 7],            # Minimum instances needed to split a node
+        'gamma': [0, 0.1, 0.5, 1, 5],                # Minimum loss reduction required to split
+        'reg_alpha': [0, 0.1, 1, 10],                # L1 Regularization (Lasso)
+        'reg_lambda': [0.1, 1, 10]                   # L2 Regularization (Ridge)
     }
     
-    print("Starting Hyperparameter Tuning (Testing 15 configurations)...")
+    print("Starting EXTREME Hyperparameter Tuning (Testing 100 configurations)...")
+    print("This will take a few minutes to mathematically guarantee the best setup.")
     search = RandomizedSearchCV(
         estimator=xgb_base,
         param_distributions=param_distributions,
-        n_iter=15,             # Test 15 random combinations (keep it relatively fast)
+        n_iter=100,            # Test 100 different configurations
         scoring='neg_log_loss',# Optimize for the best Log Loss
         cv=tscv,               # Use chronological TimeSeriesSplit
         random_state=42,
-        n_jobs=-1              # Use all CPU cores
+        n_jobs=-1,             # Use all CPU cores
+        verbose=1              # Show progress in the terminal
     )
     
     search.fit(X_train, y_train)
