@@ -3,7 +3,7 @@ import numpy as np
 import xgboost as xgb
 from sklearn.metrics import accuracy_score, log_loss, classification_report
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import TimeSeriesSplit
+from sklearn.model_selection import TimeSeriesSplit, RandomizedSearchCV
 import joblib
 import os
 
@@ -30,29 +30,55 @@ def load_data():
     return X_train, y_train, X_test, y_test, test_df
 
 def train_model(X_train, y_train):
-    # 1. Define the base model
-    base_model = xgb.XGBClassifier(
+    tscv = TimeSeriesSplit(n_splits=5)
+    
+    # 1. Base model configuration
+    xgb_base = xgb.XGBClassifier(
         objective='multi:softprob',
         num_class=3,
         eval_metric='mlogloss',
-        max_depth=4,         
-        learning_rate=0.05,  
-        n_estimators=200,    
-        random_state=42      
+        random_state=42
     )
     
-    # 2. TimeSeriesSplit
-    # Splits the data into 5 chunks chronologically. 
-    # The model trains on past chunks and evaluates on future chunks to prevent data leakage.
-    tscv = TimeSeriesSplit(n_splits=5)
+    # 2. Hyperparameter Grid
+    # The computer will test random combinations of these settings to find the absolute best fit.
+    param_distributions = {
+        'max_depth': [2, 3, 4, 5, 6],           # How deep the trees can grow
+        'learning_rate': [0.01, 0.05, 0.1, 0.2],# How fast the model learns
+        'n_estimators': [100, 200, 300, 500],   # Number of trees to build
+        'subsample': [0.6, 0.8, 1.0],           # Fraction of data used to train each tree
+        'colsample_bytree': [0.6, 0.8, 1.0],    # Fraction of features used for each tree
+        'min_child_weight': [1, 3, 5]           # Minimum instances needed to split a node
+    }
     
-    # 3. Probability Calibration
-    # Wraps the XGBoost model. It uses the TimeSeriesSplit to figure out exactly how
-    # overconfident the XGBoost model is, and applies 'isotonic' regression to fix the percentages.
-    calibrated_model = CalibratedClassifierCV(estimator=base_model, cv=tscv, method='isotonic')
+    print("Starting Hyperparameter Tuning (Testing 15 configurations)...")
+    search = RandomizedSearchCV(
+        estimator=xgb_base,
+        param_distributions=param_distributions,
+        n_iter=15,             # Test 15 random combinations (keep it relatively fast)
+        scoring='neg_log_loss',# Optimize for the best Log Loss
+        cv=tscv,               # Use chronological TimeSeriesSplit
+        random_state=42,
+        n_jobs=-1              # Use all CPU cores
+    )
     
-    print("Training and Calibrating XGBoost Model with TimeSeriesSplit...")
+    search.fit(X_train, y_train)
+    print(f"\nBest parameters found:\n{search.best_params_}")
+    
+    # 3. Create a fresh model using the mathematically best parameters
+    best_xgb = xgb.XGBClassifier(
+        objective='multi:softprob',
+        num_class=3,
+        eval_metric='mlogloss',
+        random_state=42,
+        **search.best_params_
+    )
+    
+    # 4. Probability Calibration
+    print("\nCalibrating the optimized model with TimeSeriesSplit...")
+    calibrated_model = CalibratedClassifierCV(estimator=best_xgb, cv=tscv, method='isotonic')
     calibrated_model.fit(X_train, y_train)
+    
     return calibrated_model
 
 def evaluate_model(model, X_test, y_test):
